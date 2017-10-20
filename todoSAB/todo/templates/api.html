@@ -33,23 +33,343 @@
   </table>
 </div>
 
-
+<div id="addModalBoard" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Add</h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">Name</label>
+                            <input id="nameAddBoard" type="text" class="form-control">
+                            <div id="doneAddDiv" class="checkbox">
+							  <label><input id="doneAddBoard" type="checkbox" value="">Done</label>
+							</div>
+                        </div>
+                    </form>  
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="submitAddBoard" type="button" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
-
+	<div id="editModalBoard" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Edit</h4>
+                </div>
+                <div class="modal-body">
+                    <form role="form">
+                        <div class="form-group">
+                            <label for="recipient-name" class="control-label">Name</label>
+                            <input id="nameEditBoard" type="text" class="form-control">
+                            <input id="urlEditBoard" type="text" class="sr-only">
+                            <div id="doneEditDiv" class="checkbox">
+							  <label><input id="doneEditBoard" type="checkbox" value="">Done</label>
+							</div>
+                        </div>
+                    </form>  
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <button id="submitEditBoard" type="button" class="btn btn-primary">Submit</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
                     
 <script>
 
+var currentTable = 'boards';
 
+function UpdateBoardsDetails(data) {
+	
+	currentTable = 'tasks';
+	$("#headPage").text("Tasks");
+	
+	$("#mytable tr").remove();
+	$("#mytable thead").append("<tr></tr>");
+	
+	if(data) {
+		
+		$("#mytable thead tr").append('<th id="'+data.id+'" url="'+data.url+'">'+data.name+'</th>');
+		$("#mytable thead tr").append("<th>Done</th>");
+		
+		if(data.boards) {
+			
+			$.each(data.boards,function(key, list){
+				
+				var name = '<td url="'+list.url+'">'+list.name+'</td>'
+				var done = '<td>'+list.done+'</td>'
+				
+				$('#mytable').append('<tr class="clickable-row">'+name+done+'</tr>');
+				
+			 });
+			
+			applySearch();
+		
+		}
+		
+	}
+	
+}
+
+function UpdateBoards(data) {
+	
+	currentTable = 'boards';
+	$("#headPage").text("Boards");
+	
+	$("#mytable tr").remove();
+	$("#mytable thead").append("<tr></tr>");
+	
+	$("#mytable thead tr").append("<th>Name</th>");
+	$("#mytable thead tr").append("<th>Total tasks</th>");
+	
+	if(data) {
+		
+		$.each(data,function(key, list){
+			
+			var name = '<td id="'+list.id+'" url="'+list.url+'">'+list.name+'</td>'
+			var num = '<td>'+list.num_todos+'</td>'
+			
+			$('#mytable').append('<tr class="clickable-row">'+name+num+'</tr>');
+			
+		 });
+		
+		applySearch();
+	
+	}
+}
+
+function applySearch() {
+	var value = $('#myInput').val().toLowerCase();
+    $("#mytable tr").filter(function() {
+      $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+    });
+}
 
 $(document).ready(function(){
 	
+	if ('requestIdleCallback' in window) {
+		  // requestIdleCallback supported
+		  //requestIdleCallback(backgroundTask);
+		  
+		//requestIdleCallback(backgroundTask, { timeout: 3000; });
+
+	}
 	
+	CompleteGet("/api/boards/", UpdateBoards);
+	
+	$("#myInput").on("keyup", function() {
+		 applySearch();
+	});
+	
+	$('#mytable').on('click', '.clickable-row', function(event) {
+		  $(this).addClass('danger').siblings().removeClass('danger');
+	});
+	
+	$('#goBoard').on('click', function(event) {
+		CompleteGet("/api/boards/", UpdateBoards);
+	});
+	
+	$('#detailBoard').on('click', function(event) {
+		var r = GetRowDetails();
+		if(r.url) {
+			CompleteGet(r.url, UpdateBoardsDetails);
+		}
+	});
+	
+	$('#addBoard').on('click', function(event) {
+		$('#addModalBoard').on("show.bs.modal", function (e) {
+			if(currentTable == 'boards') {
+				$("#doneAddDiv").attr("class", "sr-only");
+			}
+			if(currentTable == 'tasks') {
+				$("#doneAddDiv").attr("class", "checkbox");
+			}
+		});
+		$("#addModalBoard").modal('show');
+	});
+	
+	$('#submitAddBoard').on('click', function(event) {
+		var str = $('#nameAddBoard').val();
+		if(currentTable == 'boards') {
+			CompletePost("/api/boards/", {"name": str}, "/api/boards/", UpdateBoards);
+		}
+		if(currentTable == 'tasks') {
+			var done = $("#doneAddBoard").is(':checked');
+			var rr = $("#mytable thead th:first");
+			data = {"name": str, "done": done, "board": rr.attr('url')};
+			CompletePost("/api/todos/", data, rr.attr('url'), UpdateBoardsDetails);
+		}
+		$('#addModalBoard').modal('hide');		
+	});
+	
+	$('#editBoard').on('click', function(event) {
+		var r = GetRowDetails();
+		if(r.url) {
+			$('#editModalBoard').on("show.bs.modal", function (e) {
+				$("#nameEditBoard").val(r.name);
+				$("#urlEditBoard").val(r.url);
+				if(currentTable == 'boards') {
+					$("#doneEditDiv").attr("class", "sr-only");
+				}
+				if(currentTable == 'tasks') {
+					$("#doneEditDiv").attr("class", "checkbox");
+					var done = (r.done == 'true');
+					$("#doneEditBoard").prop("checked", done);
+				}
+			});
+			$("#editModalBoard").modal('show');
+		}
+	});
+	
+	$('#submitEditBoard').on('click', function(event) {
+		var name = $("#nameEditBoard").val();
+		var url = $("#urlEditBoard").val();
+		if(currentTable == 'boards') {
+			CompletePatch(url, {"name": name}, "/api/boards/", UpdateBoards);
+		}
+		if(currentTable == 'tasks') {
+			var done = $("#doneEditBoard").is(':checked');
+			var rr = $("#mytable thead th:first");
+			data = {"name": name, "done": done, "board": rr.attr('url')};
+			CompletePatch(url, data, rr.attr('url'), UpdateBoardsDetails);
+		}
+		$('#editModalBoard').modal('hide');		
+	});
+	
+	$('#deleteBoard').on('click', function(event) {
+		var r = GetRowDetails();
+		if(r.url) {
+			if(currentTable == 'boards') {
+				CompleteDelete(r.url, "/api/boards/", UpdateBoards);
+			}
+			if(currentTable == 'tasks') {
+				var rr = $("#mytable thead th:first");
+				CompleteDelete(r.url, rr.attr('url'), UpdateBoardsDetails);
+			}
+		}
+	});
 	
 });
 
+function GetRowDetails() {
+	var r = $('#mytable tr.danger').children();
+	if (r[0]) {
+		if(currentTable == 'boards') {
+			return {'url':$(r[0]).attr('url'), 'name': r[0].innerText}
+		}
+		if(currentTable == 'tasks') {
+			return {'url':$(r[0]).attr('url'), 'name': r[0].innerText, 'done': r[1].innerText}
+		}
+	}
+	return {}
+}
 
+function CompletePatch(url, data, urlCall, functionCall) {
+	EstablishToken();
+	$.ajax({
+        url: url,
+        data: data,
+        type: "PATCH",
+        dataType: "json",
+        //contentType: "application/json; charset=utf-8",
+        success: function (data) {
+        	CompleteGet(urlCall, functionCall);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	console.log(textStatus);
+        }
+    });   
+}
 
+function CompletePost(url, data, urlCall, functionCall) {
+	EstablishToken();
+	$.ajax({
+        url: url,
+        data: data,
+        type: "POST",
+        //dataType: "json",
+        //contentType: "application/json; charset=utf-8",
+        success: function (data) {
+        	CompleteGet(urlCall, functionCall);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	console.log(textStatus);
+        }
+    });   
+}
+
+function CompleteGet(url, functionCall) {
+	$.ajax({
+        url: url,
+        type: "GET",
+        dataType: "json",
+        //contentType: "application/json; charset=utf-8",
+        success: function (data) {
+        	functionCall(data)
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	console.log(textStatus);
+        }
+    });   
+}
+
+function CompleteDelete(url, urlCall, functionCall) {
+	EstablishToken();
+	$.ajax({
+        url: url,
+        type: "DELETE",
+        dataType: "json",
+        success: function (data) {
+        	CompleteGet(urlCall, functionCall);
+        },
+        error: function (XMLHttpRequest, textStatus, errorThrown) {
+        	console.log(textStatus);
+        }
+    }); 
+}
+
+function EstablishToken() {
+	var csrftoken = getCookie('csrftoken');
+	function csrfSafeMethod(method) {
+	    // these HTTP methods do not require CSRF protection
+	    return (/^(GET|HEAD|OPTIONS|TRACE)$/.test(method));
+	}
+	$.ajaxSetup({
+	    beforeSend: function(xhr, settings) {
+	        if (!csrfSafeMethod(settings.type) && !this.crossDomain) {
+	            xhr.setRequestHeader("X-CSRFToken", csrftoken);
+	        }
+	    }
+	});
+}
+
+function getCookie(name) {
+    var cookieValue = null;
+    if (document.cookie && document.cookie !== '') {
+        var cookies = document.cookie.split(';');
+        for (var i = 0; i < cookies.length; i++) {
+            var cookie = jQuery.trim(cookies[i]);
+            // Does this cookie string begin with the name we want?
+            if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 
 </script>
 

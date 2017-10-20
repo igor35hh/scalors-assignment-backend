@@ -137,3 +137,9 @@ REST_FRAMEWORK = {
 CELERY_BROKER_URL = 'amqp://localhost'
 CELERY_RESULT_BACKEND = 'amqp'
 CELERY_IMPORTS = ("reminder.tasks", )
+
+EMAIL_USE_TLS = True
+EMAIL_HOST = 'smtp.ua.fm'
+EMAIL_PORT = 465
+EMAIL_HOST_USER = 'nnew@ua.fm'
+EMAIL_HOST_PASSWORD = '123'

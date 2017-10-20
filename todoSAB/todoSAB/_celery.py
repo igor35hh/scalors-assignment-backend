@@ -5,6 +5,6 @@ from celery import Celery
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'todoSAB.settings')
 
-app = Celery('foodshop')
+app = Celery('todoSAB')
 app.config_from_object('django.conf:settings', namespace='CELERY')
 app.autodiscover_tasks()
