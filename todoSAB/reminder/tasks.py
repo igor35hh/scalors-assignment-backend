@@ -11,7 +11,7 @@ from django.core.exceptions import ObjectDoesNotExist
 def exceuteTask(id):
     
     try:
-        entry = Reminder.objects.get(pk=1)
+        entry = Reminder.objects.get(pk=id)
         print("working with", entry.name, entry.email)
         
         #try:
@@ -23,7 +23,7 @@ def exceuteTask(id):
         #    print("Unable to send an email", entry.name, entry.email)
         
     except ObjectDoesNotExist:
-        pass
+        print("object was delete", id)
 
     
     
