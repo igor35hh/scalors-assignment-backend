@@ -133,3 +133,7 @@ REST_FRAMEWORK = {
         'rest_framework.renderers.BrowsableAPIRenderer',
    )
 }
+
+CELERY_BROKER_URL = 'amqp://localhost'
+CELERY_RESULT_BACKEND = 'amqp'
+CELERY_IMPORTS = ("reminder.tasks", )

@@ -1,4 +1,7 @@
 eclipse.preferences.version=1
+encoding//reminder/admin.py=utf-8
+encoding//reminder/models.py=utf-8
+encoding//reminder/views.py=utf-8
 encoding//todo/admin.py=utf-8
 encoding//todo/models.py=utf-8
 encoding//todo/views.py=utf-8
