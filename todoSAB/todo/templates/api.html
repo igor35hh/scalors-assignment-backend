@@ -41,10 +41,12 @@
                     <h4 class="modal-title">Add</h4>
                 </div>
                 <div class="modal-body">
-                    <form role="form">
+                    <form role="form" data-toggle="validator">
                         <div class="form-group">
                             <label for="recipient-name" class="control-label">Name</label>
                             <input id="nameAddBoard" type="text" class="form-control">
+                            <input id="emailAddBoard" type="email" class="sr-only"  placeholder="Email" data-error="email address is invalid" required>
+                            <input id="delayAddBoard" type="number" class="sr-only" data-error="only numbers" required>
                             <div id="doneAddDiv" class="checkbox">
 							  <label><input id="doneAddBoard" type="checkbox" value="">Done</label>
 							</div>
@@ -150,6 +152,35 @@ function UpdateBoards(data) {
 	}
 }
 
+function UpdateReminders(data) {
+	
+	currentTable = 'reminders';
+	$("#headPage").text("Reminders");
+	
+	$("#mytable tr").remove();
+	$("#mytable thead").append("<tr></tr>");
+	
+	$("#mytable thead tr").append("<th>Name</th>");
+	$("#mytable thead tr").append("<th>Email</th>");
+	$("#mytable thead tr").append("<th>Delay</th>");
+	
+	if(data) {
+		
+		$.each(data,function(key, list){
+			
+			var name = '<td id="'+list.id+'" url="'+list.url+'">'+list.name+'</td>'
+			var email = '<td>'+list.email+'</td>'
+			var delay = '<td>'+list.delay+'</td>'
+			
+			$('#mytable').append('<tr class="clickable-row">'+name+email+delay+'</tr>');
+			
+		 });
+		
+		applySearch();
+	
+	}
+}
+
 function applySearch() {
 	var value = $('#myInput').val().toLowerCase();
     $("#mytable tr").filter(function() {
@@ -159,15 +190,14 @@ function applySearch() {
 
 $(document).ready(function(){
 	
+	CompleteGet("/api/boards/", UpdateBoards);
+	
 	if ('requestIdleCallback' in window) {
 		  // requestIdleCallback supported
 		  //requestIdleCallback(backgroundTask);
 		  
 		//requestIdleCallback(backgroundTask, { timeout: 3000; });
-
 	}
-	
-	CompleteGet("/api/boards/", UpdateBoards);
 	
 	$("#myInput").on("keyup", function() {
 		 applySearch();
@@ -181,10 +211,16 @@ $(document).ready(function(){
 		CompleteGet("/api/boards/", UpdateBoards);
 	});
 	
+	$('#goReminder').on('click', function(event) {
+		CompleteGet("/api/reminders/", UpdateReminders);
+	});
+	
 	$('#detailBoard').on('click', function(event) {
-		var r = GetRowDetails();
-		if(r.url) {
-			CompleteGet(r.url, UpdateBoardsDetails);
+		if(currentTable == 'boards') {
+			var r = GetRowDetails();
+			if(r.url) {
+				CompleteGet(r.url, UpdateBoardsDetails);
+			}
 		}
 	});
 	
@@ -192,9 +228,18 @@ $(document).ready(function(){
 		$('#addModalBoard').on("show.bs.modal", function (e) {
 			if(currentTable == 'boards') {
 				$("#doneAddDiv").attr("class", "sr-only");
+				$("#emailAddBoard").attr("class", "sr-only");
+				$("#delayAddBoard").attr("class", "sr-only");
 			}
 			if(currentTable == 'tasks') {
 				$("#doneAddDiv").attr("class", "checkbox");
+				$("#emailAddBoard").attr("class", "sr-only");
+				$("#delayAddBoard").attr("class", "sr-only");
+			}
+			if(currentTable == 'reminders') {
+				$("#doneAddDiv").attr("class", "sr-only");
+				$("#emailAddBoard").attr("class", "checkbox");
+				$("#delayAddBoard").attr("class", "checkbox");
 			}
 		});
 		$("#addModalBoard").modal('show');
@@ -211,25 +256,33 @@ $(document).ready(function(){
 			data = {"name": str, "done": done, "board": rr.attr('url')};
 			CompletePost("/api/todos/", data, rr.attr('url'), UpdateBoardsDetails);
 		}
+		if(currentTable == 'reminders') {
+			var email = $('#emailAddBoard').val();
+			var delay = $('#delayAddBoard').val();
+			data = {"name": str, "email": email, "delay": delay};
+			CompletePost("/api/reminders/", data, "/api/reminders/", UpdateReminders);
+		}
 		$('#addModalBoard').modal('hide');		
 	});
 	
 	$('#editBoard').on('click', function(event) {
-		var r = GetRowDetails();
-		if(r.url) {
-			$('#editModalBoard').on("show.bs.modal", function (e) {
-				$("#nameEditBoard").val(r.name);
-				$("#urlEditBoard").val(r.url);
-				if(currentTable == 'boards') {
-					$("#doneEditDiv").attr("class", "sr-only");
-				}
-				if(currentTable == 'tasks') {
-					$("#doneEditDiv").attr("class", "checkbox");
-					var done = (r.done == 'true');
-					$("#doneEditBoard").prop("checked", done);
-				}
-			});
-			$("#editModalBoard").modal('show');
+		if(currentTable != 'reminders') {
+			var r = GetRowDetails();
+			if(r.url) {
+				$('#editModalBoard').on("show.bs.modal", function (e) {
+					$("#nameEditBoard").val(r.name);
+					$("#urlEditBoard").val(r.url);
+					if(currentTable == 'boards') {
+						$("#doneEditDiv").attr("class", "sr-only");
+					}
+					if(currentTable == 'tasks') {
+						$("#doneEditDiv").attr("class", "checkbox");
+						var done = (r.done == 'true');
+						$("#doneEditBoard").prop("checked", done);
+					}
+				});
+				$("#editModalBoard").modal('show');
+			}
 		}
 	});
 	
@@ -258,6 +311,9 @@ $(document).ready(function(){
 				var rr = $("#mytable thead th:first");
 				CompleteDelete(r.url, rr.attr('url'), UpdateBoardsDetails);
 			}
+			if(currentTable == 'reminders') {
+				CompleteDelete(r.url, "/api/reminders/", UpdateReminders);
+			}
 		}
 	});
 	
@@ -271,6 +327,9 @@ function GetRowDetails() {
 		}
 		if(currentTable == 'tasks') {
 			return {'url':$(r[0]).attr('url'), 'name': r[0].innerText, 'done': r[1].innerText}
+		}
+		if(currentTable == 'reminders') {
+			return {'url':$(r[0]).attr('url'), 'name': r[0].innerText}
 		}
 	}
 	return {}
