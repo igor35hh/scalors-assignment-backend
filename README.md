@@ -1,6 +1,6 @@
 # Backend Assignment: Simple Todos and Reminder API
 
-installation process is for ubuntu 16.04
+installation process for ubuntu 16.04
 
 virtualenv -p python myproject
 source myproject/bin/activate
