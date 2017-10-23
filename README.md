@@ -1,60 +1,47 @@
 # Backend Assignment: Simple Todos and Reminder API
 
-The assignment involves the creation of a TODO and Reminder REST JSON API using Django. Please use the following libraries and versions:
+installation process is for ubuntu 16.04
 
-* Python 2.7 (we are currently migrating to 3, but a lot of the code is still 2.7)
-* Django 1.10+ 
-* Django Rest Framework 3.5+
-* Celery 4+
+virtualenv -p python myproject
+source myproject/bin/activate
+cd myproject
 
-## Simple TODO API (1-3h)
+pip install -r requirements.txt
+git clone https://github.com/igor35hh/scalors-assignment-backend
 
-Create a CRUD API for a simple TODO Management application. TODOs are organized in boards, on every board there can be multiple TODOs. A TODO contains a title (str), done (bool), a created (datetime) and updated (datetime) timestamp. A board has a name (str). 
+install rabbitmq: https://www.rabbitmq.com/install-debian.html
 
-Via a REST API it must be possible to:
+echo 'deb http://www.rabbitmq.com/debian/ testing main' |
+     sudo tee /etc/apt/sources.list.d/rabbitmq.list
 
-*   List all boards
-*   Add a new board
-*   Change a board's title
-*   Remove a board
-*   List all TODOs on a board
-*   List only uncompleted TODOs
-*   Add TODOs to a board
-*   Change a TODOs title or status
-*   Delete a TODO
+wget -O- https://www.rabbitmq.com/rabbitmq-release-signing-key.asc |
+     sudo apt-key add -
 
-User Management and Authentication is not required.
+wget -O- https://dl.bintray.com/rabbitmq/Keys/rabbitmq-release-signing-key.asc |
+     sudo apt-key add -
 
-### Constraints
+sudo apt-get update
+sudo apt-get install rabbitmq-server
 
-*   When listing all boards the JSON should have a todo_count field, but not the list of all todos
-*   In the board's detail view all todos should be serialized and the todo_count should not be visible
+check sudo systemctl status rabbitmq-server
+if doesn't run
+sudo systemctl start rabbitmq-server
 
-## Reminder API (1-2h)
+cd todoSAB
 
-Another endpoint should allow the user to set reminders. A reminder contains an email address, a reminder text and a delay in minutes when it will be triggered. 
+for sending email is necessary establish setting in the file settings.py located in root package todoSAB
+also uncomment a pice of code in the file tasks.py located in reminder package
 
-Via the REST API it must be possible to:
+python manage.py makemigrations todo
+python manage.py makemigrations reminder
+python manage.py migrate
+python manage.py runserver
 
-*   List all reminders
-*   Create a new reminder
-*   Remove a reminder
+in separate window run
+celery -A mysite worker --loglevel=info
+for clear queue run
+celery -A mysite purge
 
-After the user provided delay the user should receive an email. If you don't want to work with email it's ok to replace the email address with a callback URL and to POST the serialized reminder to this URL.
+or together: python manage.py runserver & celery -A mysite worker --loglevel=info
 
-### Constraints
-
-Please use celery to implement the delayed execution.
-
-## How to work on the assessment
-
-*   Clone this repository
-*   Start working on the assignment
-*   Please do periodic commits with meaningful commit messages
-*   Once you are done push your final results
-*   If you don't want to create a public repository please invite (@phelmig, @erzaehlsalex, @flore2003) to your working repository
-*   Please include a brief description how to run your solution
-*   If you have any questions contact us (jobs@rocketloop.de)
-
-Please note that we don't accept solutions without periodic commits or if we are unable to execute the solution.
-
+open browser and go to localhost:8000
