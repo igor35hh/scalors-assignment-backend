@@ -88,6 +88,23 @@
         </div>
     </div>
     
+    <div id="taskModalBoard" class="modal fade">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+                    <h4 class="modal-title">Task message</h4>
+                </div>
+                <div class="modal-body">
+                    <h4 id="descriptionTask" class="modal-title"></h4> 
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Ok</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
                     
 <script>
 
@@ -188,16 +205,27 @@ function applySearch() {
     });
 }
 
+function showTask(data) {
+	if(data) {
+		//console.log(data)
+		$('#taskModalBoard').on("show.bs.modal", function (e) {
+			$("#descriptionTask").text("Task is: "+data.status+" "+data.data.name+" "+data.data.email);
+		});
+		$("#taskModalBoard").modal('show');
+	}
+}
+
+function backgroundTask() {
+	//console.log('call')
+	CompleteGet("/taskqueue/", showTask);
+}
+
 $(document).ready(function(){
 	
 	CompleteGet("/api/boards/", UpdateBoards);
 	
-	if ('requestIdleCallback' in window) {
-		  // requestIdleCallback supported
-		  //requestIdleCallback(backgroundTask);
-		  
-		//requestIdleCallback(backgroundTask, { timeout: 3000; });
-	}
+	//setTimeout(backgroundTask, 60*1000);
+	setInterval(backgroundTask, 60 * 1000 );
 	
 	$("#myInput").on("keyup", function() {
 		 applySearch();
@@ -341,7 +369,7 @@ function CompletePatch(url, data, urlCall, functionCall) {
         url: url,
         data: data,
         type: "PATCH",
-        dataType: "json",
+        //dataType: "json",
         //contentType: "application/json; charset=utf-8",
         success: function (data) {
         	CompleteGet(urlCall, functionCall);

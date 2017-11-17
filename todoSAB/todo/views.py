@@ -29,4 +29,4 @@ class BoardViewSet(viewsets.ModelViewSet):
     serializer_class = BoardListSerializer
     
 def index(request):
-    return render(request, 'api.html', {'foo': 'bar',})
+    return render(request, 'api.html', {})

@@ -17,9 +17,11 @@ from django.conf.urls import url, include
 from django.contrib import admin
 from .routes import router
 from todo.views import index
+from reminder.views import tasksQueue
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
     url(r'^api/', include(router.urls)),
+    url(r'^taskqueue/', tasksQueue),
     url(r'^$', index),
 ]
